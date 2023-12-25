@@ -18,6 +18,8 @@ package main
 
 import (
 	"flag"
+	"github.com/DokiDoki1103/atob-controller/internal/docker"
+	"github.com/DokiDoki1103/atob-controller/internal/gitx"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -34,7 +36,7 @@ import (
 
 	atobv1 "github.com/DokiDoki1103/atob-controller/api/v1"
 	"github.com/DokiDoki1103/atob-controller/internal/controller"
-	//+kubebuilder:scaffold:imports
+	// +kubebuilder:scaffold:imports
 )
 
 var (
@@ -46,7 +48,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(atobv1.AddToScheme(scheme))
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 }
 
 func main() {
@@ -65,6 +67,10 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	// 创建对象
+	docker.NewDocker()
+	gitx.NewGit()
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
@@ -96,7 +102,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Atob")
 		os.Exit(1)
 	}
-	//+kubebuilder:scaffold:builder
+	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")

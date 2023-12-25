@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,29 +45,49 @@ type GitConfig struct {
 	Branch string `json:"branch,omitempty" yaml:"branch,omitempty"`
 	// Tag 标签
 	Tag string `json:"tag,omitempty" yaml:"tag,omitempty"`
+
+	// 这里使用 "-" 表示忽略序列化
+	Endpoint *transport.Endpoint `json:"-" yaml:"-"`
 }
 
 // ImageConfig 最后要生成的镜像配置
 type ImageConfig struct {
-	// ImageName 镜像名称
-	ImageName string `json:"imageName" yaml:"imageName"`
+	// Name 镜像名称
+	Name string `json:"name" yaml:"name"`
 	// ImageTag 镜像版本
-	ImageTag string `json:"imageTag" yaml:"imageTag"`
+	Tag string `json:"tag" yaml:"tag"`
 
+	// Registry 镜像仓库地址
+	Registry string `json:"registry,omitempty" yaml:"registry,omitempty"`
 	// Username 镜像仓库认证用户名
 	Username string `json:"username,omitempty" yaml:"username,omitempty"`
 
 	// Password 镜像仓库认证密码
 	Password string `json:"password,omitempty" yaml:"password,omitempty"`
 
-	// Push 是否推送该镜像
+	// Push 是否自动推送该镜像
 	Push bool `json:"push,omitempty" yaml:"push,omitempty"`
+
+	// Build 是否自动build该镜像
+	Build bool `json:"build,omitempty" yaml:"build,omitempty"`
 }
+
+const (
+	Error            = "Error"            // 错误
+	Pulling          = "Pulling"          // 正在拉取源码
+	CheckCodeSuccess = "CheckCodeSuccess" // 检查源码成功
+	Building         = "Building"         // 正在打包构建
+	Pushing          = "Pushing"          // 如果配置了远程镜像仓库那么就推送仓库
+	Success          = "Success"          // 成功
+)
 
 // AtobStatus defines the observed state of Atob
 type AtobStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// LogPath 指定任务日志路径
+	LogPath string `json:"logPath,omitempty" yaml:"logPath,omitempty"`
+
+	// Status 任务状态
+	Status string `json:"status,omitempty" yaml:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

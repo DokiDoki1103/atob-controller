@@ -58,28 +58,41 @@ spec:
               image:
                 description: Image 最后要生成的镜像配置
                 properties:
-                  imageName:
-                    description: ImageName 镜像名称
-                    type: string
-                  imageTag:
-                    description: ImageTag 镜像版本
+                  build:
+                    description: Build 是否自动build该镜像
+                    type: boolean
+                  name:
+                    description: Name 镜像名称
                     type: string
                   password:
                     description: Password 镜像仓库认证密码
                     type: string
                   push:
-                    description: Push 是否推送该镜像
+                    description: Push 是否自动推送该镜像
                     type: boolean
+                  registry:
+                    description: Registry 镜像仓库地址
+                    type: string
+                  tag:
+                    description: ImageTag 镜像版本
+                    type: string
                   username:
                     description: Username 镜像仓库认证用户名
                     type: string
                 required:
-                - imageName
-                - imageTag
+                - name
+                - tag
                 type: object
             type: object
           status:
             description: AtobStatus defines the observed state of Atob
+            properties:
+              logPath:
+                description: LogPath 指定任务日志路径
+                type: string
+              status:
+                description: Status 任务状态
+                type: string
             type: object
         type: object
     served: true
