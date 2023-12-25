@@ -7,4 +7,14 @@ layout:
 - go.kubebuilder.io/v4
 projectName: atob-controller
 repo: github.com/DokiDoki1103/atob-controller
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: itihey.com
+  group: atob
+  kind: Atob
+  path: github.com/DokiDoki1103/atob-controller/api/v1
+  version: v1
 version: "3"

@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- atob_v1_atob.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

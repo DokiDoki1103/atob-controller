@@ -1,0 +1,31 @@
+# permissions for end users to edit atobs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: atob-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: atob-controller
+    app.kubernetes.io/part-of: atob-controller
+    app.kubernetes.io/managed-by: kustomize
+  name: atob-editor-role
+rules:
+- apiGroups:
+  - atob.itihey.com
+  resources:
+  - atobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - atob.itihey.com
+  resources:
+  - atobs/status
+  verbs:
+  - get
