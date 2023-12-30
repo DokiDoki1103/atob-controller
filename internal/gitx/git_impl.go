@@ -47,9 +47,8 @@ func authMethod(ctx context.Context, protocol, username, password string) (trans
 		return nil, errors.New("暂时不支持的类型")
 	}
 }
-func (g *gitx) Clone(ctx context.Context, path string, config atobv1.GitConfig, file *os.File) error {
-	defer file.Close()
-
+func (g *gitx) Clone(ctx context.Context, path string, config *atobv1.GitConfig, file *os.File) error {
+	endpoint, _ := transport.NewEndpoint(config.Url)
 	opts := &git.CloneOptions{
 		URL:      config.Url,
 		Progress: file,
@@ -57,7 +56,7 @@ func (g *gitx) Clone(ctx context.Context, path string, config atobv1.GitConfig, 
 		Depth:    1,
 	}
 
-	auth, err := authMethod(ctx, config.Endpoint.Protocol, config.Username, config.Password)
+	auth, err := authMethod(ctx, endpoint.Protocol, config.Username, config.Password)
 
 	log.Println(auth, err)
 	if err != nil {
@@ -75,8 +74,9 @@ func (g *gitx) Clone(ctx context.Context, path string, config atobv1.GitConfig, 
 	return err
 }
 
-func (g *gitx) Pull(ctx context.Context, path string, config atobv1.GitConfig, file *os.File) error {
+func (g *gitx) Pull(ctx context.Context, path string, config *atobv1.GitConfig, file *os.File) error {
 
+	endpoint, _ := transport.NewEndpoint(config.Url)
 	repo, err := git.PlainOpen(path)
 
 	if err != nil {
@@ -94,7 +94,7 @@ func (g *gitx) Pull(ctx context.Context, path string, config atobv1.GitConfig, f
 		Progress:     file,
 	}
 
-	auth, err := authMethod(ctx, config.Endpoint.Protocol, config.Username, config.Password)
+	auth, err := authMethod(ctx, endpoint.Protocol, config.Username, config.Password)
 	log.Println(auth, err)
 	if err != nil {
 		return err
@@ -121,8 +121,7 @@ func (g *gitx) Pull(ctx context.Context, path string, config atobv1.GitConfig, f
 }
 
 // PullOrClone 拉取或者克隆
-func (g *gitx) PullOrClone(ctx context.Context, path string, config atobv1.GitConfig, file *os.File) error {
-
+func (g *gitx) PullOrClone(ctx context.Context, path string, config *atobv1.GitConfig, file *os.File) error {
 	// 检查路径是否存在
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err := g.Clone(ctx, path, config, file)
@@ -138,5 +137,4 @@ func (g *gitx) PullOrClone(ctx context.Context, path string, config atobv1.GitCo
 		}
 	}
 	return nil
-
 }

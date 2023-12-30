@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"github.com/DokiDoki1103/atob-controller/internal/docker"
 	"github.com/DokiDoki1103/atob-controller/internal/gitx"
-	"github.com/go-git/go-git/v5/plumbing/transport"
 	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -51,40 +50,48 @@ type AtobReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *AtobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
 
-	atob := &atobv1.Atob{}
+	atob := new(atobv1.Atob)
 	if err := r.Get(ctx, req.NamespacedName, atob); err != nil {
-		logger.Error(err, "unable to fetch Atob")
+		log.FromContext(ctx).Error(err, "unable to fetch Atob")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	logger.Info(fmt.Sprintf("Reconciling Atob: %s", atob.Name))
 
-	endpoint, _ := transport.NewEndpoint(atob.Spec.Git.Url)
+	if atob.Status.Status == atobv1.Success {
+		return ctrl.Result{}, nil
+	}
+	log.FromContext(ctx).Info(fmt.Sprintf("Reconciling Atob: %s", atob.Name))
 
-	atob.Spec.Git.Endpoint = endpoint
+	codePath := "data/code/" + gitx.GetRepoName(atob.Spec.Git.Url)
+	logPath := "data/log/1.log"
 
-	codePath := "/Users/zhangxiaoyuan/GolandProjects/atob/data/log/6"
+	file, _ := os.Create(logPath)
+	defer file.Close()
 
-	file, _ := os.Create("data/log/" + "1" + ".log")
-	fmt.Println(file.Name())
-
+	r.UpdateStatus(ctx, atob, atobv1.Pulling)
 	err := gitx.Default().PullOrClone(ctx, codePath, atob.Spec.Git, file)
 	if err != nil {
-		logger.Error(err, "unable to pull or clone git")
+		log.FromContext(ctx).Error(err, "unable to pull or clone git")
+		r.UpdateStatus(ctx, atob, atobv1.PullFailed)
 		return ctrl.Result{}, err
 	}
-	docker.Default().Build(ctx, codePath, atob.Spec.Image, file)
-
-	atob.Status.Status = atobv1.Success
-
-	// Update the status in Kubernetes
-	if err := r.Status().Update(ctx, atob); err != nil {
-		logger.Error(err, "unable to update Atob status")
+	r.UpdateStatus(ctx, atob, atobv1.PullSuccess)
+	err = docker.Default().Build(ctx, codePath, atob.Spec.Image, file)
+	if err != nil {
+		r.UpdateStatus(ctx, atob, atobv1.BuildFailed)
 		return ctrl.Result{}, err
 	}
-
+	r.UpdateStatus(ctx, atob, atobv1.Success)
+	log.FromContext(ctx).Info("success")
 	return ctrl.Result{}, nil
+}
+
+func (r *AtobReconciler) UpdateStatus(ctx context.Context, atob *atobv1.Atob, status string) {
+	logger := log.FromContext(ctx)
+	atob.Status.Status = status
+	if err := r.Status().Update(ctx, atob); err != nil {
+		logger.Error(err, "unable to update Atob status: "+status)
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.

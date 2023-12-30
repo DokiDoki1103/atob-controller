@@ -17,7 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/go-git/go-git/v5/plumbing/transport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,9 +26,9 @@ import (
 // AtobSpec defines the desired state of Atob
 type AtobSpec struct {
 	// Git 源仓库配置
-	Git GitConfig `json:"git,omitempty" yaml:"git,omitempty"`
+	Git *GitConfig `json:"git,omitempty" yaml:"git,omitempty"`
 	// Image 最后要生成的镜像配置
-	Image ImageConfig `json:"image,omitempty" yaml:"image,omitempty"`
+	Image *ImageConfig `json:"image,omitempty" yaml:"image,omitempty"`
 }
 
 // GitConfig 源仓库配置
@@ -45,9 +44,6 @@ type GitConfig struct {
 	Branch string `json:"branch,omitempty" yaml:"branch,omitempty"`
 	// Tag 标签
 	Tag string `json:"tag,omitempty" yaml:"tag,omitempty"`
-
-	// 这里使用 "-" 表示忽略序列化
-	Endpoint *transport.Endpoint `json:"-" yaml:"-"`
 }
 
 // ImageConfig 最后要生成的镜像配置
@@ -75,9 +71,12 @@ type ImageConfig struct {
 const (
 	Error            = "Error"            // 错误
 	Pulling          = "Pulling"          // 正在拉取源码
+	PullSuccess      = "PullSuccess"      // 拉取源码成功
+	PullFailed       = "PullFailed"       // 拉取源码失败
 	CheckCodeSuccess = "CheckCodeSuccess" // 检查源码成功
 	Building         = "Building"         // 正在打包构建
-	Pushing          = "Pushing"          // 如果配置了远程镜像仓库那么就推送仓库
+	BuildSuccess     = "BuildSuccess"     // 打包构建成功
+	BuildFailed      = "BuildFailed"      // 打包构建失败
 	Success          = "Success"          // 成功
 )
 

@@ -17,74 +17,59 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
-	"path/filepath"
-	"runtime"
-	"testing"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
 	atobv1 "github.com/DokiDoki1103/atob-controller/api/v1"
-	//+kubebuilder:scaffold:imports
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"testing"
+	"time"
 )
 
-// These tests use Ginkgo (BDD-style Go testing framework). Refer to
-// http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
+func TestControllers2(t *testing.T) {
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(atobv1.AddToScheme(scheme))
 
-var cfg *rest.Config
-var k8sClient client.Client
-var testEnv *envtest.Environment
-
-func TestControllers(t *testing.T) {
-	RegisterFailHandler(Fail)
-
-	RunSpecs(t, "Controller Suite")
-}
-
-var _ = BeforeSuite(func() {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-
-	By("bootstrapping test environment")
-	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: true,
-
-		// The BinaryAssetsDirectory is only required if you want to run the tests directly
-		// without call the makefile target test. If not informed it will look for the
-		// default path defined in controller-runtime which is /usr/local/kubebuilder/.
-		// Note that you must have the required binaries setup under the bin directory to perform
-		// the tests directly. When we run make test it will be setup and used automatically.
-		BinaryAssetsDirectory: filepath.Join("..", "..", "bin", "k8s",
-			fmt.Sprintf("1.28.3-%s-%s", runtime.GOOS, runtime.GOARCH)),
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		Scheme:  scheme,
+		Metrics: metricsserver.Options{BindAddress: ":8090"},
+	})
+	if err != nil {
+		t.Fatalf("Error creating manager: %v", err)
 	}
 
-	var err error
-	// cfg is defined in this file globally.
-	cfg, err = testEnv.Start()
-	Expect(err).NotTo(HaveOccurred())
-	Expect(cfg).NotTo(BeNil())
+	go func() {
+		// 明确启动缓存
+		if err := mgr.GetCache().Start(context.Background()); err != nil {
+			t.Fatalf("Error starting cache: %v", err)
+		}
+	}()
+	time.Sleep(2 * time.Second)
 
-	err = atobv1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
+	atob := &atobv1.Atob{}
+	err = mgr.GetClient().Get(context.Background(), client.ObjectKey{
+		Namespace: "default",
+		Name:      "atob-sample",
+	}, atob)
+	fmt.Println(atob)
+	if err != nil {
+		t.Fatalf("Error getting resource: %v", err)
+	}
 
-	//+kubebuilder:scaffold:scheme
+	// 对获取到的资源进行更新
+	atob.Status.Status = "Updated status"
+	err = mgr.GetClient().Status().Update(context.Background(), atob)
+	if err != nil {
+		t.Fatalf("Error updating resource: %v", err)
+	}
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	Expect(err).NotTo(HaveOccurred())
-	Expect(k8sClient).NotTo(BeNil())
-
-})
-
-var _ = AfterSuite(func() {
-	By("tearing down the test environment")
-	err := testEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
-})
+	// 添加断言，验证更新后的状态是否正确
+	if atob.Status.Status != "Updated status" {
+		t.Errorf("Unexpected status after update: %s", atob.Status)
+	}
+}

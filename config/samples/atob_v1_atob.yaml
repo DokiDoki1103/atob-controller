@@ -1,19 +1,13 @@
 apiVersion: atob.itihey.com/v1
 kind: Atob
 metadata:
-  labels:
-    app.kubernetes.io/name: atob
-    app.kubernetes.io/instance: atob-sample
-    app.kubernetes.io/part-of: atob-controller
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: atob-controller
   name: atob-sample
 spec:
   git:
     url: https://github.com/itihey/tikuAdapter.git
     branch: main
   image:
-    name: lengyue/ck-java-maven-demo
+    name: test/tiku
     tag: latest
     registry: docker.io
 

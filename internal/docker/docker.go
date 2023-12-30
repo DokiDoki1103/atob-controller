@@ -9,8 +9,8 @@ import (
 )
 
 type DockerInterface interface {
-	Build(ctx context.Context, path string, config atobv1.ImageConfig, file *os.File) error
-	Pull(ctx context.Context, config atobv1.ImageConfig) (io.ReadCloser, error)
+	Build(ctx context.Context, path string, config *atobv1.ImageConfig, file *os.File) error
+	Pull(ctx context.Context, config *atobv1.ImageConfig) (io.ReadCloser, error)
 }
 
 var defaultDocker *docker

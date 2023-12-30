@@ -16,10 +16,10 @@ type GitConfig struct {
 	LogPath       string              `json:"log_path"`
 }
 type GitInterface interface {
-	Clone(ctx context.Context, path string, config atobv1.GitConfig, file *os.File) error
-	Pull(ctx context.Context, path string, config atobv1.GitConfig, file *os.File) error
+	Clone(ctx context.Context, path string, config *atobv1.GitConfig, file *os.File) error
+	Pull(ctx context.Context, path string, config *atobv1.GitConfig, file *os.File) error
 
-	PullOrClone(ctx context.Context, path string, config atobv1.GitConfig, file *os.File) error
+	PullOrClone(ctx context.Context, path string, config *atobv1.GitConfig, file *os.File) error
 }
 
 type gitx struct {

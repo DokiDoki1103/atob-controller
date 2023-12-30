@@ -10,9 +10,10 @@ import (
 	"github.com/docker/docker/pkg/archive"
 	"io"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func (d docker) Build(ctx context.Context, path string, config atobv1.ImageConfig, file *os.File) error {
+func (d docker) Build(ctx context.Context, path string, config *atobv1.ImageConfig, file *os.File) error {
 	tar, err := archive.TarWithOptions(path, &archive.TarOptions{})
 	if err != nil {
 		return err
@@ -23,6 +24,9 @@ func (d docker) Build(ctx context.Context, path string, config atobv1.ImageConfi
 		Tags:       []string{config.Name + ":" + config.Tag},
 		Dockerfile: "Dockerfile",
 	})
+	if err != nil {
+		log.FromContext(ctx).Error(err, "unable to build image")
+	}
 	defer res.Body.Close()
 
 	_, err = io.Copy(file, res.Body)
@@ -40,7 +44,7 @@ func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
 	return base64.URLEncoding.EncodeToString(authJSON), nil
 }
 
-func (d docker) Pull(ctx context.Context, config atobv1.ImageConfig) (io.ReadCloser, error) {
+func (d docker) Pull(ctx context.Context, config *atobv1.ImageConfig) (io.ReadCloser, error) {
 	authConfig := types.AuthConfig{
 		Username: config.Username,
 		Password: config.Password,
